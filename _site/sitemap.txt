@@ -1,0 +1,11 @@
+
+http://saimushi.github.io/archive.html
+http://saimushi.github.io/atom.xml
+http://saimushi.github.io/categories.html
+http://saimushi.github.io/index.html
+http://saimushi.github.io/pages.html
+http://saimushi.github.io/rss.xml
+http://saimushi.github.io/sitemap.txt
+http://saimushi.github.io/tags.html
+
+http://saimushi.github.io/programming/2011/12/29/blog-01
