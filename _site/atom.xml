@@ -4,7 +4,7 @@
  <title>「虹の彼方に」</title>
  <link href="http://saimushi.github.io/" rel="self"/>
  <link href="http://saimushi.github.io"/>
- <updated>2014-07-09T20:52:38+09:00</updated>
+ <updated>2014-07-10T23:50:04+09:00</updated>
  <id>http://saimushi.github.io</id>
  <author>
    <name>saimushi</name>
@@ -13,11 +13,195 @@
 
  
  <entry>
+   <title>UNICORNのライブラリ管理について</title>
+   <link href="http://saimushi.github.io/2014/07/10/UNICORN-02"/>
+   <updated>2014-07-10T00:00:00+09:00</updated>
+   <id>http://saimushi.github.io/2014/07/10/UNICORN-02</id>
+   <content type="html">
+&lt;p&gt;UNICORNも他のフレームワーク同様にオートローダーによってクラスファイルが読み込まれるようになっています。&lt;br /&gt;
+UNICORNのクラスファイルの依存関係は&lt;/p&gt;
+
+&lt;p&gt;```
+UNICORN/src/lib/FrameworkPackage/core/package.xml&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;で、定義されています。&lt;br /&gt;
+XMLってちょっと古いですね・・・&lt;br /&gt;
+自覚はあるんで暫くはこのままで。
+何せ5年前に作り始めたフレームワークなので、古いしきたりも残っていたります。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;p&gt;さて、package.xmlの中を見てみると&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+&lt;utilities&gt;
+	&lt;link mapfrom=&quot;Cipher&quot; mapto=&quot;Crypt&quot; /&gt;default.implement.Cipher/Cipher
+	&lt;link /&gt;default.implement.Utilities/Utilities
+&lt;/utilities&gt;
+&lt;validations&gt;
+	&lt;link mapfrom=&quot;GenericValidations&quot; mapto=&quot;Validations&quot; /&gt;default.implement.Utilities/GenericValidations
+&lt;/validations&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;などとずらずらとクラス名っぽいNodeが並んでいるのが分かると思います。&lt;br /&gt;
+前回の記事で使った”Validations”クラスを例にして、ライブラリ管理の仕組みを説明しよう思います。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;p&gt;ValidationsクラスはUNICORNのライブラリとしてpackage.xmlの中で&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+&lt;validations&gt; ← コールされるクラス名でXMLNodeを定義
+	↓ コールされた時にUNICORNのオートローダーが読み込みを行うクラスファイルの実態
+	&lt;link mapfrom=&quot;GenericValidations&quot; mapto=&quot;Validations&quot; /&gt;default.implement.Utilities/GenericValidations
+	         ↑ 実態の実クラス名              ↑ コールされたクラス名に変換する定義  ↑ 実態のファイルパス
+&lt;/validations&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;このように定義されています。&lt;/p&gt;
+
+&lt;p&gt;コレがUNICORNフレームワークの特徴の一つだったりするのですが、コールされるクラス名と&lt;br /&gt;
+実態となるクラスファイルのクラス名が&lt;strong&gt;必ず一致している必要が無い&lt;/strong&gt;仕組みとなっています。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;p&gt;実際に、Validationsクラスの実態として定義されているファイル&lt;/p&gt;
+
+&lt;p&gt;```
+default.implement.Utilities/GenericValidations
+実ファイルパスは
+UNICORN/src/lib/GenericPackage/class/Utilities/GenericValidations.class.php&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;を、見てみると&lt;/p&gt;
+
+&lt;p&gt;```
+&amp;lt;?php
+class GenericValidations {
+・・・
+}&lt;/p&gt;
+
+&lt;p&gt;?&amp;gt;&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;と、定義されています。&lt;br /&gt;
+&lt;strong&gt;(※「default.implement.Utilities/GenericValidations」の、 「default.implement.」の部分についてはまた別途解説します)&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;p&gt;実際のクラス名は&lt;br /&gt;
+&lt;strong&gt;Validations&lt;/strong&gt;&lt;br /&gt;
+では無く&lt;br /&gt;
+&lt;strong&gt;GenericValidations&lt;/strong&gt;&lt;br /&gt;
+事が分かると思います。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;p&gt;まとめると、UNICORNのライブラリ管理は&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;クラス名がコールされると、UNICORNのコアファイルはpackage.xmlを参照しに行く&lt;/li&gt;
+  &lt;li&gt;package.xml内のコールされたクラス名に一致するXMLNodeを探す&lt;/li&gt;
+  &lt;li&gt;見つかったXMLNode内に定義されたクラスファイルをロードする&lt;/li&gt;
+  &lt;li&gt;XMLNodeにmapfromとmapto属性がしていされていたらその属性に沿ってクラスを自動で継承したmapto定義された小クラスを生成する&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;と、言う動きをします。&lt;/p&gt;
+
+&lt;p&gt;なんでこんな面倒な作りになっているのかと言うのは、是非体験して頂きたいのですが、次回にでも詳しく書こうと思います。&lt;br /&gt;
+今回は&lt;br /&gt;
+&lt;strong&gt;「ライブラリ管理がどうされているか」&lt;/strong&gt;&lt;br /&gt;
+までの紹介でした。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>UNICORNのライブラリを単純に使ってみる</title>
+   <link href="http://saimushi.github.io/2014/07/10/UNICORN-01"/>
+   <updated>2014-07-10T00:00:00+09:00</updated>
+   <id>http://saimushi.github.io/2014/07/10/UNICORN-01</id>
+   <content type="html">
+&lt;p&gt;&lt;strong&gt;・先ずは当然ながらUNICORNをGithubからcloneしてくる必要がある。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;```
+cd [貴方のワークスペースの何処か]
+git clone git@github.com:saimushi/UNICORN.git&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;オススメはこの時点で、ローカルWebサーバから参照し易いと分かっている場所にcloneする事。&lt;br /&gt;
+(別の記事で書きますが、インストーラを利用する時に少し面倒が減る)&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;・cloneしたら後は簡単。&lt;/strong&gt;&lt;br /&gt;
+UNICORNをrequireしてライブラリクラスをcallすれば利用出来る。    &lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;&lt;small&gt;因みにUNICORNのコアファイルは&lt;br /&gt;
+[貴方の何処かのワークスペース]/UNICORN/FrameworkPackage/core/UNICORN&lt;br /&gt;
+に、有ります。&lt;/small&gt;&lt;/strong&gt;  &lt;/p&gt;
+
+&lt;p&gt;```
+貴方の何処かのPHPファイル&lt;/p&gt;
+
+&lt;?php
+
+require_once &quot;[貴方の何処かのワークスペース]/UNICORN/src/lib/FrameworkPackage/core/UNICORN&quot;
+
+// メールアドレスかどうかをチェックする
+echo Validations::isEmail(&#39;saimushi@hoge.hoge&#39;);
+
+?&gt;
+
+&lt;p&gt;——– OUTPUT ——–
+1&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;以上です。&lt;br /&gt;
+因みに当然オートローダーが走ってるワケですが、その辺りの詳しい話はまた次回。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>jekyllな記事をiPhonnから投稿してみた その2</title>
+   <link href="http://saimushi.github.io/programming/2014/07/09/blog-02"/>
+   <updated>2014-07-09T00:00:00+09:00</updated>
+   <id>http://saimushi.github.io/programming/2014/07/09/blog-02</id>
+   <content type="html">
+&lt;p&gt;Octopageから投稿テスト  &lt;/p&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>jekyllな記事をiPhonnから投稿してみた</title>
+   <link href="http://saimushi.github.io/programming/2014/07/09/blog-01"/>
+   <updated>2014-07-09T00:00:00+09:00</updated>
+   <id>http://saimushi.github.io/programming/2014/07/09/blog-01</id>
+   <content type="html">
+&lt;p&gt;Test&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
    <title>jekyllでブログ的な備忘録を初めて見た</title>
    <link href="http://saimushi.github.io/programming/2011/12/29/blog-01"/>
    <updated>2011-12-29T00:00:00+09:00</updated>
    <id>http://saimushi.github.io/programming/2011/12/29/blog-01</id>
    <content type="html">
+&lt;p&gt;テスト&lt;/p&gt;
+
 &lt;p&gt;This Jekyll introduction will outline specifically  what Jekyll is and why you would want to use it.
 Directly following the intro we’ll learn exactly &lt;em&gt;how&lt;/em&gt; Jekyll does what it does.&lt;/p&gt;
 
