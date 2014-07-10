@@ -12,7 +12,9 @@ AGE.1980 (S55)
 STATE.Tokyo  
 
 UNICORNと言うフレームワークを開発しています。  
-<a href="http://saimushi.github.io/UNICORN" target="_blank">http://saimushi.github.io/UNICORN</a>
+<a href="http://saimushi.github.io/UNICORN" target="_blank">http://saimushi.github.io/UNICORN</a>  
+
+**※Ruby製のUnicornとは関係が有りません、紛らわしくてゴメンナサイm(__)m**
 
 &nbsp;
 
