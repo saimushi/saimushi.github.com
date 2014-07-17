@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>「虹の彼方に」 - UNICORNのライブラリ管理について -</title>
+    <title>「虹の彼方に」 - UNICORNのライブラリ管理について その2 論理クラス名の恩恵を受ける -</title>
     
     <meta name="author" content="saimushi">
 
@@ -130,118 +130,167 @@
       <div class="container">
         
 <div class="page-header">
-  <h1>UNICORNのライブラリ管理について<br/><small>UNICORNの使い方</small></h1>
+  <h1>UNICORNのライブラリ管理について その2 論理クラス名の恩恵を受ける<br/><small>UNICORNの使い方</small></h1>
 </div>
 
 <div class="row post-full">
   <div class="col-xs-12">
     <div class="date">
-      <span>10 July 2014</span>
+      <span>17 July 2014</span>
     </div>
     <div class="content">
       
-<p>UNICORNも他のフレームワーク同様にオートローダーによってクラスファイルが読み込まれるようになっています。<br />
-UNICORNのクラスファイルの依存関係は</p>
+<p>前回の記事で<strong>UNICORNはコールされたクラス名と実体ファイルのクラス名が一致している必要が無い</strong>と説明しました。</p>
 
 <p>```
-UNICORN/src/lib/FrameworkPackage/core/package.xml</p>
+・package.xmlの中のValidationsクラスの定義</p>
 
-<p>```</p>
-
-<p>で、定義されています。<br />
-XMLってちょっと古いですね・・・<br />
-自覚はあるんですが暫くはこのままで・・・<br />
-何せ5年前に作り始めたフレームワークなので、古いシキタリも結構残って居たりもします。</p>
-
-<p> </p>
-
-<p>さて、package.xmlの中を見てみると</p>
-
-<p>```</p>
-<utilities>
-	<link mapfrom="Cipher" mapto="Crypt" />default.implement.Cipher/Cipher
-	<link />default.implement.Utilities/Utilities
-</utilities>
-<validations>
-	<link mapfrom="GenericValidations" mapto="Validations" />default.implement.Utilities/GenericValidations
-</validations>
-
-<p>```</p>
-
-<p>などとずらずらとクラス名っぽいNodeが並んでいるのが分かると思います。<br />
-前回の記事で使った”Validations”クラスを例にして、ライブラリ管理の仕組みを説明しよう思います。</p>
-
-<p> </p>
-
-<p>ValidationsクラスはUNICORNのライブラリとしてpackage.xmlの中で</p>
-
-<p>```</p>
+<p>・・・</p>
 <validations> ← コールされるクラス名でXMLNodeを定義
 	↓ コールされた時にUNICORNのオートローダーが読み込みを行うクラスファイルの実態
 	<link mapfrom="GenericValidations" mapto="Validations" />default.implement.Utilities/GenericValidations
 	         ↑ 実態の実クラス名              ↑ コールされたクラス名に変換する定義  ↑ 実態のファイルパス
 </validations>
+<p>・・・</p>
 
-<p>```</p>
+<p>・Validationsクラスの実装</p>
 
-<p>このように定義されています。</p>
-
-<p>コレがUNICORNフレームワークの特徴の一つだったりするのですが、コールされるクラス名と<br />
-実態となるクラスファイルのクラス名が<strong>必ず一致している必要が無い</strong>仕組みとなっています。</p>
-
-<p> </p>
-
-<p>実際に、Validationsクラスの実態として定義されているファイル</p>
-
-<p>```
-default.implement.Utilities/GenericValidations
-実ファイルパスは
-UNICORN/src/lib/GenericPackage/class/Utilities/GenericValidations.class.php</p>
-
-<p>```</p>
-
-<p>を、見てみると</p>
-
-<p>```
-&lt;?php
+<?php
 class GenericValidations {
 ・・・
-}</p>
+}
 
-<p>?&gt;</p>
+
+・Validationsクラスを利用するコードの実装
+
+<?php
+
+require_once "[貴方の何処かのワークスペース]/UNICORN/src/lib/FrameworkPackage/core/UNICORN"
+
+// メールアドレスかどうかをチェックする
+echo Validations::isEmail('saimushi@hoge.hoge');
+
+?>
+
+<p>・実行結果</p>
+
+<p>1</p>
 
 <p>```</p>
 
-<p>と、定義されています。<br />
-<strong>(※「default.implement.Utilities/GenericValidations」の、 「default.implement.」の部分についてはまた別途解説します)</strong></p>
+<p>この機能を簡単な言葉に置き換えると<br />
+つまりUNICORNは<br />
+<strong>論理クラス名でクラスをコールする機能</strong><br />
+を提供していると言う事です。</p>
+
+<p>この機能を利用する事で、UNICORNではより柔軟で強力な機能拡張を、クラスに施す事が出来るようになっています。</p>
 
 <p> </p>
 
-<p>実際のクラス名は<br />
-<strong>Validations</strong><br />
-では無く<br />
-<strong>GenericValidations</strong><br />
-である事が分かると思います。</p>
+<p>GenericValidationsクラスには、実は大したメソッドが用意されて居ません。<br />
+なのでGenericValidationsクラスを拡張して
+新たにisDomainメソッドを追加しようと思ったとします。</p>
+
+<p>通常であれば</p>
+
+<p>```
+・拡張クラスの新規作成</p>
+
+<?php
+class MyValidations extends GenericValidations
+{
+    public static function isDomain($argment){
+    ・・・
+    }
+}
+
+
+・実装クラス
+
+// メールアドレスかどうかをチェックする
+echo MyValidations::isEmail('saimushi@hoge.hoge');
+↑
+リファクタリング等で利用クラス名を変更する。
+
+echo MyValidations::isDomain('hoge.hoge');
+↑
+拡張したクラスメソッドをコールする
+
+```
+
+このような感じの拡張修正になると思います。
+
+しかしUNICORNならもっと簡単にクラスの拡張修正が行えます。
+
+同じ修正をUNICORNで行った場合は
+
+```
+・拡張クラスの新規作成
+
+<?php
+class MyValidations extends GenericValidations
+{
+    public static function isDomain($argment){
+    ・・・
+    }
+}
+?>
+
+<p>・package.xmlの中のValidationsクラスの定義を拡張</p>
+
+<p>・・・</p>
+<validations>
+	<link />default.implement.Utilities/GenericValidations
+	<link mapfrom="MyValidations" mapto="Validations" />default.implement.Utilities/MyValidations
+	  ↑ 新たに作成した拡張クラスを実行クラスとして定義を追加する
+	         ↑ 実態の実クラス名を作成したクラス名に変更する
+</validations>
+<p>・・・</p>
+
+<p>・実装クラス</p>
+
+<?php
+
+require_once "[貴方の何処かのワークスペース]/UNICORN/src/lib/FrameworkPackage/core/UNICORN"
+
+// メールアドレスかどうかをチェックする
+echo Validations::isEmail('saimushi@hoge.hoge');
+↑
+元のコードには何も変更を加える必要は無い
+
+// ドメインかどうかをチェックする
+echo Validations::isDomain('hoge.hoge');
+↑
+拡張したクラスメソッドをコールする
+
+?>
+
+<p>・実行結果
+11</p>
+
+<p>```</p>
+
+<p>このようになります。</p>
+
+<p>見ての通り<strong>殆どpackage.xmlの定義変更だけで、クラスの拡張が出来ます。</strong><br />
+<strong>しかも、実装クラスの利用クラス名に変更を加える必要がありません。</strong>  </p>
+
+<p>コレが</p>
+
+<p><strong>「論理クラス名でクラスをコールする機能」</strong></p>
+
+<p>の、使い処になります。</p>
 
 <p> </p>
 
-<p>まとめると、UNICORNのライブラリ管理は</p>
+<p>プロジェクトは時間の経過と人の入れ代わりによって、ポリシーを失って行きます。<br />
+どんなにコーディング規約で縛っても、既存クラスの拡張とクラス名の変更はバグリスクに大きくインパクトして行く宿命にあると思います。<br />
+そのリスクを軽減しつつ、最大のメンテナンス性を発揮する事に</p>
 
-<ul>
-  <li>クラス名がコールされると、UNICORNのコアファイルはpackage.xmlを参照しに行く</li>
-  <li>package.xml内のコールされたクラス名に一致するXMLNodeを探す</li>
-  <li>見つかったXMLNode内に定義されたクラスファイルをロードする</li>
-  <li>XMLNodeにmapfromとmapto属性が指定されていたらその属性に沿ってクラスを自動で継承したmapto定義された小クラスを生成する</li>
-</ul>
+<p><strong>「論理クラス名でクラスをコールする機能」</strong></p>
 
-<p>と、言う動きをします。</p>
-
-<p> </p>
-
-<p>なんでこんな面倒な作りになっているのかと言うのは、是非体験して頂きたいのですが、次回にでも詳しく書こうと思います。<br />
-今回は<br />
-<strong>「ライブラリ管理がどうされているか」</strong><br />
-までの紹介でした。</p>
+<p>は、一役買ってくれると思います。<br />
+是非利用してみて下さい。</p>
 
 <p> </p>
 
@@ -287,11 +336,11 @@ class GenericValidations {
     <hr>
     <ul class="pagination">
     
-      <li class="prev"><a href="/2014/07/10/UNICORN-01" title="UNICORNのライブラリを単純に使ってみる">&laquo; Previous</a></li>
+      <li class="prev"><a href="/2014/07/10/UNICORN-02" title="UNICORNのライブラリ管理について">&laquo; Previous</a></li>
     
       <li><a href="/archive.html">Archive</a></li>
     
-      <li class="next"><a href="/2014/07/17/UNICORN-01" title="UNICORNのライブラリ管理について その2 論理クラス名の恩恵を受ける">Next &raquo;</a></li>
+      <li class="next disabled"><a>Next &rarr;</a>
     
     </ul>
     <hr>

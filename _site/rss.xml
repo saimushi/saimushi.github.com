@@ -5,10 +5,172 @@
         <description>「虹の彼方に」 - saimushi</description>
         <link>http://saimushi.github.io</link>
         <link>http://saimushi.github.io</link>
-        <lastBuildDate>2014-07-10T23:50:04+09:00</lastBuildDate>
-        <pubDate>2014-07-10T23:50:04+09:00</pubDate>
+        <lastBuildDate>2014-07-17T13:44:01+09:00</lastBuildDate>
+        <pubDate>2014-07-17T13:44:01+09:00</pubDate>
         <ttl>1800</ttl>
 
+
+        <item>
+                <title>UNICORNのライブラリ管理について その2 論理クラス名の恩恵を受ける</title>
+                <description>
+&lt;p&gt;前回の記事で&lt;strong&gt;UNICORNはコールされたクラス名と実体ファイルのクラス名が一致している必要が無い&lt;/strong&gt;と説明しました。&lt;/p&gt;
+
+&lt;p&gt;```
+・package.xmlの中のValidationsクラスの定義&lt;/p&gt;
+
+&lt;p&gt;・・・&lt;/p&gt;
+&lt;validations&gt; ← コールされるクラス名でXMLNodeを定義
+	↓ コールされた時にUNICORNのオートローダーが読み込みを行うクラスファイルの実態
+	&lt;link mapfrom=&quot;GenericValidations&quot; mapto=&quot;Validations&quot; /&gt;default.implement.Utilities/GenericValidations
+	         ↑ 実態の実クラス名              ↑ コールされたクラス名に変換する定義  ↑ 実態のファイルパス
+&lt;/validations&gt;
+&lt;p&gt;・・・&lt;/p&gt;
+
+&lt;p&gt;・Validationsクラスの実装&lt;/p&gt;
+
+&lt;?php
+class GenericValidations {
+・・・
+}
+
+
+・Validationsクラスを利用するコードの実装
+
+&lt;?php
+
+require_once &quot;[貴方の何処かのワークスペース]/UNICORN/src/lib/FrameworkPackage/core/UNICORN&quot;
+
+// メールアドレスかどうかをチェックする
+echo Validations::isEmail(&#39;saimushi@hoge.hoge&#39;);
+
+?&gt;
+
+&lt;p&gt;・実行結果&lt;/p&gt;
+
+&lt;p&gt;1&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;この機能を簡単な言葉に置き換えると&lt;br /&gt;
+つまりUNICORNは&lt;br /&gt;
+&lt;strong&gt;論理クラス名でクラスをコールする機能&lt;/strong&gt;&lt;br /&gt;
+を提供していると言う事です。&lt;/p&gt;
+
+&lt;p&gt;この機能を利用する事で、UNICORNではより柔軟で強力な機能拡張を、クラスに施す事が出来るようになっています。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;p&gt;GenericValidationsクラスには、実は大したメソッドが用意されて居ません。&lt;br /&gt;
+なのでGenericValidationsクラスを拡張して
+新たにisDomainメソッドを追加しようと思ったとします。&lt;/p&gt;
+
+&lt;p&gt;通常であれば&lt;/p&gt;
+
+&lt;p&gt;```
+・拡張クラスの新規作成&lt;/p&gt;
+
+&lt;?php
+class MyValidations extends GenericValidations
+{
+    public static function isDomain($argment){
+    ・・・
+    }
+}
+
+
+・実装クラス
+
+// メールアドレスかどうかをチェックする
+echo MyValidations::isEmail(&#39;saimushi@hoge.hoge&#39;);
+↑
+リファクタリング等で利用クラス名を変更する。
+
+echo MyValidations::isDomain(&#39;hoge.hoge&#39;);
+↑
+拡張したクラスメソッドをコールする
+
+```
+
+このような感じの拡張修正になると思います。
+
+しかしUNICORNならもっと簡単にクラスの拡張修正が行えます。
+
+同じ修正をUNICORNで行った場合は
+
+```
+・拡張クラスの新規作成
+
+&lt;?php
+class MyValidations extends GenericValidations
+{
+    public static function isDomain($argment){
+    ・・・
+    }
+}
+?&gt;
+
+&lt;p&gt;・package.xmlの中のValidationsクラスの定義を拡張&lt;/p&gt;
+
+&lt;p&gt;・・・&lt;/p&gt;
+&lt;validations&gt;
+	&lt;link /&gt;default.implement.Utilities/GenericValidations
+	&lt;link mapfrom=&quot;MyValidations&quot; mapto=&quot;Validations&quot; /&gt;default.implement.Utilities/MyValidations
+	  ↑ 新たに作成した拡張クラスを実行クラスとして定義を追加する
+	         ↑ 実態の実クラス名を作成したクラス名に変更する
+&lt;/validations&gt;
+&lt;p&gt;・・・&lt;/p&gt;
+
+&lt;p&gt;・実装クラス&lt;/p&gt;
+
+&lt;?php
+
+require_once &quot;[貴方の何処かのワークスペース]/UNICORN/src/lib/FrameworkPackage/core/UNICORN&quot;
+
+// メールアドレスかどうかをチェックする
+echo Validations::isEmail(&#39;saimushi@hoge.hoge&#39;);
+↑
+元のコードには何も変更を加える必要は無い
+
+// ドメインかどうかをチェックする
+echo Validations::isDomain(&#39;hoge.hoge&#39;);
+↑
+拡張したクラスメソッドをコールする
+
+?&gt;
+
+&lt;p&gt;・実行結果
+11&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;このようになります。&lt;/p&gt;
+
+&lt;p&gt;見ての通り&lt;strong&gt;殆どpackage.xmlの定義変更だけで、クラスの拡張が出来ます。&lt;/strong&gt;&lt;br /&gt;
+&lt;strong&gt;しかも、実装クラスの利用クラス名に変更を加える必要がありません。&lt;/strong&gt;  &lt;/p&gt;
+
+&lt;p&gt;コレが&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;「論理クラス名でクラスをコールする機能」&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;の、使い処になります。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;p&gt;プロジェクトは時間の経過と人の入れ代わりによって、ポリシーを失って行きます。&lt;br /&gt;
+どんなにコーディング規約で縛っても、既存クラスの拡張とクラス名の変更はバグリスクに大きくインパクトして行く宿命にあると思います。&lt;br /&gt;
+そのリスクを軽減しつつ、最大のメンテナンス性を発揮する事に&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;「論理クラス名でクラスをコールする機能」&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;は、一役買ってくれると思います。&lt;br /&gt;
+是非利用してみて下さい。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+</description>
+                <link>http://saimushi.github.io/2014/07/17/UNICORN-01</link>
+                <guid>http://saimushi.github.io/2014/07/17/UNICORN-01</guid>
+                <pubDate>2014-07-17T00:00:00+09:00</pubDate>
+        </item>
 
         <item>
                 <title>UNICORNのライブラリ管理について</title>
@@ -23,8 +185,8 @@ UNICORN/src/lib/FrameworkPackage/core/package.xml&lt;/p&gt;
 
 &lt;p&gt;で、定義されています。&lt;br /&gt;
 XMLってちょっと古いですね・・・&lt;br /&gt;
-自覚はあるんで暫くはこのままで。
-何せ5年前に作り始めたフレームワークなので、古いしきたりも残っていたります。&lt;/p&gt;
+自覚はあるんですが暫くはこのままで・・・&lt;br /&gt;
+何せ5年前に作り始めたフレームワークなので、古いシキタリも結構残って居たりもします。&lt;/p&gt;
 
 &lt;p&gt; &lt;/p&gt;
 
@@ -94,7 +256,7 @@ class GenericValidations {
 &lt;strong&gt;Validations&lt;/strong&gt;&lt;br /&gt;
 では無く&lt;br /&gt;
 &lt;strong&gt;GenericValidations&lt;/strong&gt;&lt;br /&gt;
-事が分かると思います。&lt;/p&gt;
+である事が分かると思います。&lt;/p&gt;
 
 &lt;p&gt; &lt;/p&gt;
 
@@ -104,10 +266,12 @@ class GenericValidations {
   &lt;li&gt;クラス名がコールされると、UNICORNのコアファイルはpackage.xmlを参照しに行く&lt;/li&gt;
   &lt;li&gt;package.xml内のコールされたクラス名に一致するXMLNodeを探す&lt;/li&gt;
   &lt;li&gt;見つかったXMLNode内に定義されたクラスファイルをロードする&lt;/li&gt;
-  &lt;li&gt;XMLNodeにmapfromとmapto属性がしていされていたらその属性に沿ってクラスを自動で継承したmapto定義された小クラスを生成する&lt;/li&gt;
+  &lt;li&gt;XMLNodeにmapfromとmapto属性が指定されていたらその属性に沿ってクラスを自動で継承したmapto定義された小クラスを生成する&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;と、言う動きをします。&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
 
 &lt;p&gt;なんでこんな面倒な作りになっているのかと言うのは、是非体験して頂きたいのですが、次回にでも詳しく書こうと思います。&lt;br /&gt;
 今回は&lt;br /&gt;
