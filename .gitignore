@@ -1,6 +1,7 @@
 fuel/app/logs/*/*/*
 fuel/app/cache/*/*
 /.settings
+/_site
 /.buildpath
 /.project
 /tmps
