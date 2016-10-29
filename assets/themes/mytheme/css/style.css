@@ -21,6 +21,9 @@ h1 {
 h1, h2, h3, h4 {
   color: #04B486;
 }
+img {
+	width: 100%;
+}
 #footer {
   background-color: #ED58EA;
 }
